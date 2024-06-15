@@ -1,6 +1,7 @@
 ﻿using Domain.Entidades;
 using Infraestrutura;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace dogsecats.Controllers
 {
@@ -14,6 +15,14 @@ namespace dogsecats.Controllers
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
         }
+
+        //CRUD Atendimento
+
+        private bool AtendimentoExists(int id)
+        {
+            return _db.Atendimentos.Any(e => e.AppointmentId == id);
+        }
+
 
         [HttpGet]
         public IActionResult Get()
@@ -29,6 +38,50 @@ namespace dogsecats.Controllers
             _db.SaveChanges();
 
             return Ok(atendimentos.Entity);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutAppointment(int id, Atendimentos atendimento)
+        {
+            if (id != atendimento.AppointmentId)
+            {
+                return BadRequest();
+            }
+
+            _db.Entry(atendimento).State = EntityState.Modified;
+
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!AtendimentoExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAtendimento(int id)
+        {
+            var atendimento = await _db.Atendimentos.FindAsync(id);
+            if (atendimento == null)
+            {
+                return NotFound();
+            }
+
+            _db.Atendimentos.Remove(atendimento);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
         }
     }
  }
